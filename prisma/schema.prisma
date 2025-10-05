@@ -9,3 +9,122 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+// ===== Enums =====
+
+// 사용자 역할
+enum Role {
+  USER          // 일반 사용자
+  INTERPRETER   // 통역사
+  ADMIN         // 관리자
+}
+
+// 사용자 상태
+enum UserStatus {
+  ACTIVE        // 활성
+  PENDING       // 대기 중
+  SUSPENDED     // 정지
+  DELETED       // 삭제됨 (soft delete)
+}
+
+// 인증 제공자 (로그인 방식)
+enum AuthProvider {
+  SMS           // SMS 인증
+  EMAIL         // 이메일
+  GOOGLE        // 구글
+  KAKAO         // 카카오
+  APPLE         // 애플
+}
+
+// 통역사 승인 상태
+enum InterpreterStatus {
+  PENDING_DOCUMENTS  // 서류 제출 대기
+  PENDING_APPROVAL   // 관리자 승인 대기
+  APPROVED           // 승인됨
+  REJECTED           // 거절됨
+}
+
+// 서류 검증 상태
+enum DocumentVerificationStatus {
+  PENDING    
+  VERIFIED   
+  REJECTED   
+}
+
+// SMS 인증 목적
+enum SmsVerificationPurpose {
+  LOGIN           // 로그인
+  PASSWORD_RESET  // 비밀번호 재설정
+}
+
+
+
+// ===== Models =====
+
+model User {
+  id            String       @id @default(uuid())
+  role          Role         @default(USER)
+  phone         String?      @unique
+  email         String?      @unique
+  password      String?      // 해시된 비밀번호 (소셜 로그인은 null)
+  authProvider  AuthProvider
+  status        UserStatus   @default(PENDING)
+
+  tokenVersion  Int          @default(0) 
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?    // soft delete용
+
+
+  // Relations
+  userProfile   UserProfile?  // 1:1 관계
+  refreshTokens      RefreshToken[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  birthDate   DateTime?
+  avatarUrl   String?
+  nationality String?
+  preferences Json?     // 사용자 설정 (언어, 알림 등)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("user_profiles")
+}
+
+model SmsVerification {
+  id          String                    @id @default(uuid())
+  phone       String
+  code        String                    // 6자리 인증 코드
+  purpose     SmsVerificationPurpose    @default(LOGIN)
+  isVerified  Boolean                   @default(false)
+  attemptCount Int                      @default(0)
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime                  @default(now())
+
+  @@map("sms_verifications")
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token       String    @unique  // 해시된 토큰
+  expiresAt   DateTime
+  deviceInfo  String?
+  ipAddress   String?
+  isRevoked   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@map("refresh_tokens")
+}
