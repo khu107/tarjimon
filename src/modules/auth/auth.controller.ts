@@ -12,13 +12,13 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('sms/send')
-  @ApiOperation({ summary: 'SMS 인증 코드 발송' })
+  @ApiOperation({ summary: 'Send SMS verification code' })
   async sendVerificationCode(@Body() sendSmsDto: SendSmsDto) {
     return this.authService.sendVerificationCode(sendSmsDto.phone);
   }
 
   @Post('sms/verify')
-  @ApiOperation({ summary: 'SMS 인증 코드 검증 및 로그인' })
+  @ApiOperation({ summary: 'Verify SMS code and login' })
   async verifyCodeAndLogin(
     @Body() verifySmsDto: VerifySmsDto,
     @Req() req: Request,
@@ -35,13 +35,13 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: 'Access Token 재발급' })
+  @ApiOperation({ summary: 'Refresh access token' })
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshAccessToken(refreshTokenDto.refreshToken);
   }
 
   @Post('logout')
-  @ApiOperation({ summary: '로그아웃 (Refresh Token 무효화)' })
+  @ApiOperation({ summary: 'Logout (invalidate refresh token)' })
   async logout(@Body() logoutDto: LogoutDto) {
     return this.authService.logout(logoutDto.refreshToken);
   }

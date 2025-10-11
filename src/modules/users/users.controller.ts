@@ -28,7 +28,7 @@ export class UsersController {
   @Get('me')
   @UseGuards(JwtAuthGuard) // JWT 검증 필요
   @ApiBearerAuth() // Swagger에 Authorization 버튼 표시
-  @ApiOperation({ summary: '내 정보 조회' })
+  @ApiOperation({ summary: 'Get my profile' })
   async getMyProfile(
     @CurrentUser() user: { userId: string; role: string; tokenVersion: number },
   ) {
@@ -38,7 +38,7 @@ export class UsersController {
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '프로필 완성/수정' })
+  @ApiOperation({ summary: 'Update profile' })
   async updateProfile(
     @CurrentUser() user: { userId: string; role: string; tokenVersion: number },
     @Body() updateProfileDto: UpdateProfileDto,
