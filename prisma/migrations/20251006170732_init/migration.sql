@@ -40,6 +40,7 @@ CREATE TABLE "public"."user_profiles" (
     "name" TEXT NOT NULL,
     "birthDate" TIMESTAMP(3),
     "avatarUrl" TEXT,
+    "nationality" TEXT,
     "preferences" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

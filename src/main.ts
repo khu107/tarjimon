@@ -17,8 +17,8 @@ async function bootstrap() {
 
   // Swagger 설정
   const config = new DocumentBuilder()
-    .setTitle('Tarjimon API')
-    .setDescription('The Tarjimon API description')
+    .setTitle('HelloHelper API')
+    .setDescription('The HelloHelper API description')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
