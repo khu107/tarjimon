@@ -30,26 +30,21 @@ enum UserStatus {
 // 인증 제공자 (로그인 방식)
 enum AuthProvider {
   SMS           // SMS 인증
-  EMAIL         // 이메일
-  GOOGLE        // 구글
-  KAKAO         // 카카오
-  APPLE         // 애플
 }
 
 // 통역사 승인 상태
 enum InterpreterStatus {
-  PENDING_DOCUMENTS  // 서류 제출 대기
   PENDING_APPROVAL   // 관리자 승인 대기
   APPROVED           // 승인됨
   REJECTED           // 거절됨
 }
 
 // 서류 검증 상태
-enum DocumentVerificationStatus {
-  PENDING    
-  VERIFIED   
-  REJECTED   
-}
+// enum DocumentVerificationStatus {
+//   PENDING    
+//   VERIFIED   
+//   REJECTED   
+// }
 
 // SMS 인증 목적
 enum SmsVerificationPurpose {
@@ -65,8 +60,6 @@ model User {
   id            String       @id @default(uuid())
   role          Role         @default(USER)
   phone         String?      @unique
-  email         String?      @unique
-  password      String?      // 해시된 비밀번호 (소셜 로그인은 null)
   authProvider  AuthProvider
   status        UserStatus   @default(PENDING)
 
@@ -88,7 +81,6 @@ model UserProfile {
   id          String    @id @default(uuid())
   userId      String    @unique
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   name        String
   birthDate   DateTime?
   avatarUrl   String?
