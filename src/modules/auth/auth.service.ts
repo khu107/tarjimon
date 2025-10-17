@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
-import { TwilioService } from '../../common/services/twilio.service';
+import { AligoService } from '../../common/services/aligo.service';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 
@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private twilioService: TwilioService,
+    private aligoService: AligoService,
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -18,21 +18,32 @@ export class AuthService {
 
   // SMS 인증 코드 발송
   async sendVerificationCode(phone: string) {
-    const verification = await this.twilioService.sendVerificationCode(phone);
+    // 알리고로 인증코드 발송
+    const code = await this.aligoService.sendVerificationCode(phone);
 
+    // 인증코드 해싱하여 DB 저장
+    const hashedCode = await bcrypt.hash(code, 10);
+
+    // 기존 미인증 코드 삭제
+    await this.prisma.smsVerification.deleteMany({
+      where: {
+        phone,
+      },
+    });
+
+    // 새 인증코드 저장
     await this.prisma.smsVerification.create({
       data: {
         phone,
-        code: 'twilio_managed',
+        code: hashedCode,
         purpose: 'LOGIN',
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10분
       },
     });
 
     return {
       success: true,
       message: 'Verification code sent',
-      sid: verification.sid,
     };
   }
 
@@ -43,11 +54,31 @@ export class AuthService {
     deviceInfo?: string,
     ipAddress?: string,
   ) {
-    const verification = await this.twilioService.verifyCode(phone, code);
+    // DB에서 유효한 인증코드 조회
+    const smsVerification = await this.prisma.smsVerification.findFirst({
+      where: {
+        phone,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-    if (verification.status !== 'approved') {
-      throw new UnauthorizedException('Invalid or expired verification code');
+    if (!smsVerification) {
+      throw new UnauthorizedException('Verification code not found or expired');
     }
+
+    // 인증코드 검증
+    const isValidCode = await bcrypt.compare(code, smsVerification.code);
+    if (!isValidCode) {
+      throw new UnauthorizedException('Invalid verification code');
+    }
+
+    // 인증 성공 시 즉시 삭제 (재사용 방지)
+    await this.prisma.smsVerification.delete({
+      where: { id: smsVerification.id },
+    });
 
     let user = await this.usersService.findByPhone(phone);
 
@@ -103,7 +134,7 @@ export class AuthService {
       ipAddress,
     );
 
-    // ✅ 프로필 완성 여부 체크 추가
+    // 프로필 완성 여부 체크
     const profile = await this.prisma.userProfile.findUnique({
       where: { userId: updatedUser.id },
       select: {
@@ -122,7 +153,7 @@ export class AuthService {
     return {
       success: true,
       user: updatedUser,
-      isProfileComplete, // ✅ 추가
+      isProfileComplete,
       ...tokens,
     };
   }

@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { UsersModule } from '../users/users.module';
-import { TwilioService } from 'src/common/services/twilio.service';
+import { AligoService } from '../../common/services/aligo.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
@@ -26,6 +26,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     UsersModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, TwilioService, JwtStrategy],
+  providers: [AuthService, AligoService, JwtStrategy],
 })
 export class AuthModule {}

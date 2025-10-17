@@ -98,10 +98,7 @@ model SmsVerification {
   phone       String
   code        String                    // 6자리 인증 코드
   purpose     SmsVerificationPurpose    @default(LOGIN)
-  isVerified  Boolean                   @default(false)
-  attemptCount Int                      @default(0)
   expiresAt   DateTime
-  verifiedAt  DateTime?
   createdAt   DateTime                  @default(now())
 
   @@map("sms_verifications")

@@ -4,7 +4,7 @@ import { IsString } from 'class-validator';
 export class VerifySmsDto {
   @ApiProperty({
     description: 'Phone number with country code',
-    example: '+821012345678',
+    example: '01012345678',
   })
   @IsString()
   phone: string;
