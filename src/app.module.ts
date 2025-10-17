@@ -8,8 +8,9 @@ import { ConfigModule } from '@nestjs/config';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath:
-        process.env.NODE_ENV === 'production' ? '.env.production' : '.env',
+      // envFilePath:
+      //   process.env.NODE_ENV === 'production' ? '.env.production' : '.env',
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
     PrismaModule,
     UsersModule,
