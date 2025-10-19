@@ -27,8 +27,7 @@ export class AuthController {
     const ipAddress = req.ip || req.socket.remoteAddress;
 
     return this.authService.verifyCodeAndLogin(
-      verifySmsDto.phone,
-      verifySmsDto.code,
+      verifySmsDto,
       deviceInfo,
       ipAddress,
     );

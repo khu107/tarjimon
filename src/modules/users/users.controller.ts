@@ -15,6 +15,7 @@ import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { AuthenticatedUser } from 'src/common/types/jwt-payload.type';
 
 @Controller('users')
 export class UsersController {
@@ -29,10 +30,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard) // JWT 검증 필요
   @ApiBearerAuth() // Swagger에 Authorization 버튼 표시
   @ApiOperation({ summary: 'Get my profile' })
-  async getMyProfile(
-    @CurrentUser() user: { userId: string; role: string; tokenVersion: number },
-  ) {
-    return this.usersService.findOne(user.userId); // user.sub = userId
+  async getMyProfile(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.findOne(user.userId);
   }
 
   @Patch('profile')
@@ -40,7 +39,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update profile' })
   async updateProfile(
-    @CurrentUser() user: { userId: string; role: string; tokenVersion: number },
+    @CurrentUser() user: AuthenticatedUser,
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.usersService.updateProfile(user.userId, updateProfileDto);

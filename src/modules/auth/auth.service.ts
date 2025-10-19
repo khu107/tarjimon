@@ -5,6 +5,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AligoService } from '../../common/services/aligo.service';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
+import { VerifySmsDto } from './dto/verify-sms.dto';
+import { SmsVerificationPurpose } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -18,10 +20,8 @@ export class AuthService {
 
   // SMS 인증 코드 발송
   async sendVerificationCode(phone: string) {
-    // 알리고로 인증코드 발송
     const code = await this.aligoService.sendVerificationCode(phone);
 
-    // 인증코드 해싱하여 DB 저장
     const hashedCode = await bcrypt.hash(code, 10);
 
     // 기존 미인증 코드 삭제
@@ -36,8 +36,8 @@ export class AuthService {
       data: {
         phone,
         code: hashedCode,
-        purpose: 'LOGIN',
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10분
+        purpose: SmsVerificationPurpose.LOGIN,
+        expiresAt: new Date(Date.now() + 3 * 60 * 1000),
       },
     });
 
@@ -49,12 +49,13 @@ export class AuthService {
 
   // 인증 코드 검증 + 로그인
   async verifyCodeAndLogin(
-    phone: string,
-    code: string,
+    verifySmsDto: VerifySmsDto,
     deviceInfo?: string,
     ipAddress?: string,
   ) {
     // DB에서 유효한 인증코드 조회
+    const { phone, code } = verifySmsDto;
+
     const smsVerification = await this.prisma.smsVerification.findFirst({
       where: {
         phone,

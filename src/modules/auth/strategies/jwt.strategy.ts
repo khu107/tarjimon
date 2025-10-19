@@ -3,6 +3,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../prisma/prisma.service';
+import {
+  AuthenticatedUser,
+  JwtPayload,
+} from 'src/common/types/jwt-payload.type';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -17,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
@@ -27,13 +32,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         status: true,
       },
     });
-
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
     // USER 역할만 tokenVersion 체크 (단일 기기만 허용)
-    if (user.role === 'USER' && payload.tokenVersion !== user.tokenVersion) {
+    if (user.role === Role.USER && payload.tokenVersion !== user.tokenVersion) {
       throw new UnauthorizedException(
         'Token invalidated - logged in from another device',
       );
