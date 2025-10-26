@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -26,10 +25,6 @@ export class UsersService {
     });
   }
 
-  // findAll() {
-  //   return `This action returns all users`;
-  // }
-
   async findOne(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
@@ -42,7 +37,6 @@ export class UsersService {
             id: true,
             name: true,
             avatarUrl: true,
-            birthDate: true,
             nationality: true,
           },
         },
@@ -51,20 +45,15 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const { name, birthDate, nationality, avatarUrl } = updateProfileDto;
+    const { name, nationality, avatarUrl } = updateProfileDto;
 
     return this.prisma.userProfile.update({
       where: { userId },
       data: {
         name,
-        birthDate: new Date(birthDate),
         nationality,
         ...(avatarUrl && { avatarUrl }),
       },
     });
   }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} user`;
-  // }
 }

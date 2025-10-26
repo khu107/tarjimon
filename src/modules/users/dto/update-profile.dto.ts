@@ -1,9 +1,4 @@
-import {
-  IsString,
-  IsDateString,
-  IsOptional,
-  IsNotEmpty,
-} from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -11,14 +6,6 @@ export class UpdateProfileDto {
   @IsString()
   @IsNotEmpty()
   name: string;
-
-  @ApiProperty({
-    example: '1990-01-01',
-    description: 'Date of birth (YYYY-MM-DD)',
-  })
-  @IsDateString()
-  @IsNotEmpty()
-  birthDate: string;
 
   @ApiProperty({
     example: 'KR',

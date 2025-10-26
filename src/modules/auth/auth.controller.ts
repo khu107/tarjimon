@@ -17,16 +17,32 @@ export class AuthController {
     return this.authService.sendVerificationCode(sendSmsDto.phone);
   }
 
-  @Post('sms/verify')
-  @ApiOperation({ summary: 'Verify SMS code and login' })
-  async verifyCodeAndLogin(
+  @Post('sms/verify/user')
+  @ApiOperation({ summary: 'Verify SMS code and login as USER' })
+  async verifyCodeAndLoginAsUser(
     @Body() verifySmsDto: VerifySmsDto,
     @Req() req: Request,
   ) {
     const deviceInfo = req.headers['user-agent'];
     const ipAddress = req.ip || req.socket.remoteAddress;
 
-    return this.authService.verifyCodeAndLogin(
+    return this.authService.verifyCodeAndLoginAsUser(
+      verifySmsDto,
+      deviceInfo,
+      ipAddress,
+    );
+  }
+
+  @Post('sms/verify/interpreter')
+  @ApiOperation({ summary: 'Verify SMS code and login as INTERPRETER' })
+  async verifyCodeAndLoginAsInterpreter(
+    @Body() verifySmsDto: VerifySmsDto,
+    @Req() req: Request,
+  ) {
+    const deviceInfo = req.headers['user-agent'];
+    const ipAddress = req.ip || req.socket.remoteAddress;
+
+    return this.authService.verifyCodeAndLoginAsInterpreter(
       verifySmsDto,
       deviceInfo,
       ipAddress,

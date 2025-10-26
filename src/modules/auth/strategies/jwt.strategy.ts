@@ -8,17 +8,20 @@ import {
   JwtPayload,
 } from 'src/common/types/jwt-payload.type';
 import { Role } from '@prisma/client';
+import { EnvConfig } from 'src/config/env.validation';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private configService: ConfigService,
     private prisma: PrismaService,
+    private configService: ConfigService<EnvConfig, true>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_ACCESS_SECRET') || '',
+      secretOrKey: configService.getOrThrow('JWT_ACCESS_SECRET', {
+        infer: true,
+      }),
     });
   }
 

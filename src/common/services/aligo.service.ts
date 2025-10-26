@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { EnvConfig } from 'src/config/env.validation';
 
 @Injectable()
 export class AligoService {
@@ -9,10 +10,16 @@ export class AligoService {
   private readonly sender: string;
   private readonly apiUrl = 'https://apis.aligo.in/send/';
 
-  constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('ALIGO_API_KEY');
-    const userId = this.configService.get<string>('ALIGO_USER_ID');
-    const sender = this.configService.get<string>('ALIGO_SENDER');
+  constructor(private configService: ConfigService<EnvConfig, true>) {
+    const apiKey = this.configService.get<string>('ALIGO_API_KEY', {
+      infer: true,
+    });
+    const userId = this.configService.get<string>('ALIGO_USER_ID', {
+      infer: true,
+    });
+    const sender = this.configService.get<string>('ALIGO_SENDER', {
+      infer: true,
+    });
 
     if (!apiKey || !userId || !sender) {
       throw new Error('Aligo credentials are not configured');
@@ -23,10 +30,6 @@ export class AligoService {
     this.sender = sender;
   }
 
-  /**
-   * 전화번호 형식 변환
-   * +821012345678 → 01012345678
-   */
   private formatPhoneNumber(phone: string): string {
     // +82로 시작하면 0으로 변경
     if (phone.startsWith('+82')) {

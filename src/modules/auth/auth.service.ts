@@ -4,18 +4,26 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AligoService } from '../../common/services/aligo.service';
 import { UsersService } from '../users/users.service';
-import * as bcrypt from 'bcrypt';
 import { VerifySmsDto } from './dto/verify-sms.dto';
-import { SmsVerificationPurpose } from '@prisma/client';
+import { Role, SmsVerificationPurpose } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import { EnvConfig } from 'src/config/env.validation';
 
 @Injectable()
 export class AuthService {
+  //  관리자 전화번호 목록 추가
+  private readonly ADMIN_PHONES = [
+    '01043879779', // 대표
+    '010-9999-9999',
+    // CTO
+  ];
+
   constructor(
     private prisma: PrismaService,
     private aligoService: AligoService,
     private usersService: UsersService,
     private jwtService: JwtService,
-    private configService: ConfigService,
+    private configService: ConfigService<EnvConfig, true>,
   ) {}
 
   // SMS 인증 코드 발송
@@ -47,13 +55,13 @@ export class AuthService {
     };
   }
 
-  // 인증 코드 검증 + 로그인
-  async verifyCodeAndLogin(
+  // 공통 인증 로직 (private)
+  private async verifyCodeAndCreateUser(
     verifySmsDto: VerifySmsDto,
+    role: 'USER' | 'INTERPRETER',
     deviceInfo?: string,
     ipAddress?: string,
   ) {
-    // DB에서 유효한 인증코드 조회
     const { phone, code } = verifySmsDto;
 
     const smsVerification = await this.prisma.smsVerification.findFirst({
@@ -70,30 +78,47 @@ export class AuthService {
       throw new UnauthorizedException('Verification code not found or expired');
     }
 
-    // 인증코드 검증
     const isValidCode = await bcrypt.compare(code, smsVerification.code);
     if (!isValidCode) {
       throw new UnauthorizedException('Invalid verification code');
     }
 
-    // 인증 성공 시 즉시 삭제 (재사용 방지)
     await this.prisma.smsVerification.delete({
       where: { id: smsVerification.id },
     });
+
+    //  관리자 전화번호 체크
+    const isAdmin = this.ADMIN_PHONES.includes(phone);
+    const finalRole = isAdmin ? Role.ADMIN : role;
 
     let user = await this.usersService.findByPhone(phone);
 
     if (!user) {
       user = await this.usersService.create({
         phone,
-        role: 'USER',
+        role: finalRole, //  ADMIN 또는 USER/INTERPRETER
       });
 
-      await this.prisma.userProfile.create({
-        data: {
-          userId: user.id,
-          name: phone,
-        },
+      //  역할에 따라 프로필 생성 (ADMIN은 생성 안 함)
+      if (finalRole === Role.USER) {
+        await this.prisma.userProfile.create({
+          data: {
+            userId: user.id,
+            name: phone,
+          },
+        });
+      } else if (finalRole === Role.INTERPRETER) {
+        await this.prisma.interpreter.create({
+          data: {
+            userId: user.id,
+          },
+        });
+      }
+    } else if (isAdmin && user.role !== Role.ADMIN) {
+      //  기존 사용자인데 관리자 번호면 ADMIN으로 업그레이드
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { role: Role.ADMIN },
       });
     }
 
@@ -103,8 +128,7 @@ export class AuthService {
         status: 'ACTIVE',
       };
 
-      // USER만 tokenVersion 증가
-      if (user.role === 'USER') {
+      if (user.role === Role.USER) {
         updateData.tokenVersion = { increment: 1 };
       }
 
@@ -113,8 +137,7 @@ export class AuthService {
         data: updateData,
       });
 
-      // USER만 기존 RefreshToken 무효화
-      if (user.role === 'USER') {
+      if (user.role === Role.USER) {
         await tx.refreshToken.updateMany({
           where: {
             userId: user.id,
@@ -135,28 +158,100 @@ export class AuthService {
       ipAddress,
     );
 
-    // 프로필 완성 여부 체크
+    return {
+      success: true,
+      user: updatedUser,
+      ...tokens,
+    };
+  }
+
+  // 사용자 로그인
+  async verifyCodeAndLoginAsUser(
+    verifySmsDto: VerifySmsDto,
+    deviceInfo?: string,
+    ipAddress?: string,
+  ) {
+    const result = await this.verifyCodeAndCreateUser(
+      verifySmsDto,
+      Role.USER,
+      deviceInfo,
+      ipAddress,
+    );
+
+    if (result.user.role === Role.ADMIN) {
+      return {
+        ...result,
+        isProfileComplete: true, // 관리자는 항상 완성
+      };
+    }
+
     const profile = await this.prisma.userProfile.findUnique({
-      where: { userId: updatedUser.id },
+      where: { userId: result.user.id },
       select: {
         name: true,
-        birthDate: true,
         nationality: true,
       },
     });
 
     const isProfileComplete = profile
-      ? profile.name !== phone &&
-        profile.birthDate !== null &&
-        profile.nationality !== null
+      ? profile.name !== result.user.phone && profile.nationality !== null
       : false;
 
     return {
-      success: true,
-      user: updatedUser,
+      ...result,
       isProfileComplete,
-      ...tokens,
     };
+  }
+
+  // 통역사 로그인
+  async verifyCodeAndLoginAsInterpreter(
+    verifySmsDto: VerifySmsDto,
+    deviceInfo?: string,
+    ipAddress?: string,
+  ) {
+    const result = await this.verifyCodeAndCreateUser(
+      verifySmsDto,
+      Role.INTERPRETER,
+      deviceInfo,
+      ipAddress,
+    );
+
+    //  ADMIN이면 프로필 완성 체크 안 함
+    if (result.user.role === Role.ADMIN) {
+      return {
+        ...result,
+        isProfileComplete: true, // 관리자는 항상 완성
+      };
+    }
+
+    const interpreter = await this.prisma.interpreter.findUnique({
+      where: { userId: result.user.id },
+      include: {
+        languages: true,
+        specializations: true,
+      },
+    });
+
+    const isProfileComplete =
+      interpreter &&
+      interpreter.bio &&
+      interpreter.nationality &&
+      interpreter.languages.length > 0 &&
+      interpreter.specializations.length > 0;
+
+    return {
+      ...result,
+      isProfileComplete,
+    };
+  }
+
+  // 기존 메서드 (하위호환성)
+  async verifyCodeAndLogin(
+    verifySmsDto: VerifySmsDto,
+    deviceInfo?: string,
+    ipAddress?: string,
+  ) {
+    return this.verifyCodeAndLoginAsUser(verifySmsDto, deviceInfo, ipAddress);
   }
 
   // Access Token + Refresh Token 생성
@@ -176,13 +271,21 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       // Access Token
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN'),
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET', {
+          infer: true,
+        }),
+        expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN', {
+          infer: true,
+        }),
       }),
       // Refresh Token
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET', {
+          infer: true,
+        }),
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', {
+          infer: true,
+        }),
       }),
     ]);
 
@@ -208,7 +311,9 @@ export class AuthService {
   async refreshAccessToken(refreshToken: string) {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET', {
+          infer: true,
+        }),
       });
 
       const user = await this.prisma.user.findUnique({
@@ -221,7 +326,10 @@ export class AuthService {
       }
 
       // USER 역할만 tokenVersion 검증
-      if (user.role === 'USER' && payload.tokenVersion !== user.tokenVersion) {
+      if (
+        user.role === Role.USER &&
+        payload.tokenVersion !== user.tokenVersion
+      ) {
         throw new UnauthorizedException(
           'Token invalidated - logged in from another device',
         );
@@ -255,8 +363,12 @@ export class AuthService {
           tokenVersion: user.tokenVersion,
         },
         {
-          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-          expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN'),
+          secret: this.configService.get<string>('JWT_ACCESS_SECRET', {
+            infer: true,
+          }),
+          expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN', {
+            infer: true,
+          }),
         },
       );
 
@@ -276,7 +388,9 @@ export class AuthService {
     try {
       // Refresh Token 검증
       const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET', {
+          infer: true,
+        }),
       });
 
       // DB에서 해당 Refresh Token 찾아서 무효화

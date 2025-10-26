@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
   // output   = "../generated/prisma"
@@ -39,19 +38,11 @@ enum InterpreterStatus {
   REJECTED           // 거절됨
 }
 
-// 서류 검증 상태
-// enum DocumentVerificationStatus {
-//   PENDING    
-//   VERIFIED   
-//   REJECTED   
-// }
-
 // SMS 인증 목적
 enum SmsVerificationPurpose {
   LOGIN           // 로그인
   PASSWORD_RESET  // 비밀번호 재설정
 }
-
 
 
 // ===== Models =====
@@ -62,17 +53,16 @@ model User {
   phone         String?      @unique
   authProvider  AuthProvider
   status        UserStatus   @default(PENDING)
-
   tokenVersion  Int          @default(0) 
   
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   deletedAt     DateTime?    // soft delete용
 
-
   // Relations
   userProfile   UserProfile?  // 1:1 관계
-  refreshTokens      RefreshToken[]
+  interpreter   Interpreter?  // 1:1 관계
+  refreshTokens RefreshToken[]
 
   @@map("users")
 }
@@ -82,7 +72,6 @@ model UserProfile {
   userId      String    @unique
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
-  birthDate   DateTime?
   avatarUrl   String?
   nationality String?
   preferences Json?     // 사용자 설정 (언어, 알림 등)
@@ -116,4 +105,94 @@ model RefreshToken {
   createdAt   DateTime  @default(now())
 
   @@map("refresh_tokens")
+}
+
+// ===== Interpreter Models =====
+
+// 마스터 데이터: 언어
+model Language {
+  id          String    @id @default(uuid())
+  code        String    @unique  // "ko", "en", "ja"
+  name        String    @unique  // "한국어", "English"
+  
+  interpreters InterpreterLanguage[]
+  @@map("languages")
+}
+
+// 중간 테이블: 통역사 - 언어 (다대다)
+model InterpreterLanguage {
+  id              String    @id @default(uuid())
+  interpreterId   String
+  interpreter     Interpreter @relation(fields: [interpreterId], references: [id], onDelete: Cascade)
+  languageId      String
+  language        Language  @relation(fields: [languageId], references: [id])
+  
+  @@unique([interpreterId, languageId])
+  @@map("interpreter_languages")
+}
+
+// 마스터 데이터: 전문분야
+model Specialization {
+  id          String    @id @default(uuid())
+  name        String    @unique  // "의료", "법률", "기술"
+  
+  interpreters InterpreterSpecialization[]
+  @@map("specializations")
+}
+
+// 중간 테이블: 통역사 - 전문분야 (다대다)
+model InterpreterSpecialization {
+  id              String    @id @default(uuid())
+  interpreterId   String
+  interpreter     Interpreter @relation(fields: [interpreterId], references: [id], onDelete: Cascade)
+  specializationId String
+  specialization  Specialization @relation(fields: [specializationId], references: [id])
+  
+  @@unique([interpreterId, specializationId])
+  @@map("interpreter_specializations")
+}
+
+// 자격증 (1:N 관계)
+model Certification {
+  id              String    @id @default(uuid())
+  interpreterId   String
+  interpreter     Interpreter @relation(fields: [interpreterId], references: [id], onDelete: Cascade)
+  name            String
+  issuer          String?
+  issueDate       DateTime
+  expiryDate      DateTime?
+  documentUrl     String?
+  
+  createdAt       DateTime  @default(now())
+  @@map("certifications")
+}
+
+// 통역사 프로필
+model Interpreter {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+
+  name              String?
+  bio               String?   @db.Text
+  avatarUrl         String?
+  nationality       String?
+  yearsOfExperience Int?
+  currentLocation   String?
+  
+  status            InterpreterStatus @default(PENDING_APPROVAL)
+  onlineStatus      Boolean   @default(false)
+  
+  averageRating     Float?    @default(0)
+  totalReviews      Int       @default(0)
+  
+  // Relations (다대다)
+  languages         InterpreterLanguage[]
+  specializations   InterpreterSpecialization[]
+  certifications    Certification[]
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  @@map("interpreters")
 }
