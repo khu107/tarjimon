@@ -3,10 +3,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class AddSpecializationDto {
   @ApiProperty({
-    example: '의료',
-    description: 'Specialization name (의료, 법률, 기술, etc)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Specialization ID',
   })
   @IsString()
   @IsNotEmpty()
-  specializationName: string;
+  specializationId: string;
 }

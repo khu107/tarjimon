@@ -21,7 +21,8 @@ export class InterpretersPublicService {
         ...(filterDto.specialization && {
           specializations: {
             some: {
-              specialization: { name: filterDto.specialization },
+              // 🔧 수정: name → id 사용 (또는 nameEn)
+              specialization: { id: filterDto.specialization },
             },
           },
         }),
@@ -42,8 +43,11 @@ export class InterpretersPublicService {
           include: {
             language: {
               select: {
+                id: true, // 🆕 추가
                 code: true,
-                name: true,
+                nameUz: true, // 🔧 수정
+                nameRu: true, // 🔧 수정
+                nameEn: true, // 🔧 수정
               },
             },
           },
@@ -52,7 +56,10 @@ export class InterpretersPublicService {
           include: {
             specialization: {
               select: {
-                name: true,
+                id: true, // 🆕 추가
+                nameUz: true, // 🔧 수정
+                nameRu: true, // 🔧 수정
+                nameEn: true, // 🔧 수정
               },
             },
           },
@@ -83,8 +90,11 @@ export class InterpretersPublicService {
           include: {
             language: {
               select: {
+                id: true, // 🆕 추가
                 code: true,
-                name: true,
+                nameUz: true, // 🔧 수정
+                nameRu: true, // 🔧 수정
+                nameEn: true, // 🔧 수정
               },
             },
           },
@@ -93,7 +103,10 @@ export class InterpretersPublicService {
           include: {
             specialization: {
               select: {
-                name: true,
+                id: true, // 🆕 추가
+                nameUz: true, // 🔧 수정
+                nameRu: true, // 🔧 수정
+                nameEn: true, // 🔧 수정
               },
             },
           },

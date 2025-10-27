@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { AppLanguage } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -40,6 +41,20 @@ export class UsersService {
             nationality: true,
           },
         },
+      },
+    });
+  }
+
+  async updateLanguage(userId: string, appLanguage: AppLanguage) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { appLanguage },
+      select: {
+        id: true,
+        appLanguage: true,
+        role: true,
+        phone: true,
+        status: true,
       },
     });
   }

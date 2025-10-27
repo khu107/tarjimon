@@ -13,8 +13,8 @@ export class FilterInterpreterDto {
   language?: string;
 
   @ApiProperty({
-    example: '의료',
-    description: 'Specialization name filter',
+    example: 'uuid-here',
+    description: 'Specialization ID filter',
     required: false,
   })
   @IsOptional()

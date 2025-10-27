@@ -262,10 +262,21 @@ export class AuthService {
     deviceInfo?: string,
     ipAddress?: string,
   ) {
+    // 🆕 User의 appLanguage 조회
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { appLanguage: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const payload = {
       sub: userId,
       role,
       tokenVersion,
+      appLanguage: user.appLanguage,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -318,7 +329,12 @@ export class AuthService {
 
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
-        select: { tokenVersion: true, role: true, status: true },
+        select: {
+          tokenVersion: true,
+          role: true,
+          status: true,
+          appLanguage: true, // 🆕 추가
+        },
       });
 
       if (!user) {
@@ -361,6 +377,7 @@ export class AuthService {
           sub: payload.sub,
           role: user.role,
           tokenVersion: user.tokenVersion,
+          appLanguage: user.appLanguage, // 🆕 추가
         },
         {
           secret: this.configService.get<string>('JWT_ACCESS_SECRET', {

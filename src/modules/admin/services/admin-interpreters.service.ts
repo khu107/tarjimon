@@ -41,8 +41,11 @@ export class AdminInterpretersService {
           include: {
             language: {
               select: {
+                id: true, // 🆕 추가
                 code: true,
-                name: true,
+                nameUz: true, // 🔧 수정
+                nameRu: true, // 🔧 수정
+                nameEn: true, // 🔧 수정
               },
             },
           },
@@ -51,7 +54,10 @@ export class AdminInterpretersService {
           include: {
             specialization: {
               select: {
-                name: true,
+                id: true, // 🆕 추가
+                nameUz: true, // 🔧 수정
+                nameRu: true, // 🔧 수정
+                nameEn: true, // 🔧 수정
               },
             },
           },
@@ -82,8 +88,11 @@ export class AdminInterpretersService {
           include: {
             language: {
               select: {
+                id: true, // 🆕 추가
                 code: true,
-                name: true,
+                nameUz: true, // 🔧 수정
+                nameRu: true, // 🔧 수정
+                nameEn: true, // 🔧 수정
               },
             },
           },
@@ -92,7 +101,10 @@ export class AdminInterpretersService {
           include: {
             specialization: {
               select: {
-                name: true,
+                id: true, // 🆕 추가
+                nameUz: true, // 🔧 수정
+                nameRu: true, // 🔧 수정
+                nameEn: true, // 🔧 수정
               },
             },
           },

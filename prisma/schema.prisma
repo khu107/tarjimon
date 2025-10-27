@@ -44,6 +44,13 @@ enum SmsVerificationPurpose {
   PASSWORD_RESET  // 비밀번호 재설정
 }
 
+// 🆕 앱 언어
+enum AppLanguage {
+  UZ    // 우즈벡어
+  RU    // 러시아어
+  EN    // 영어
+}
+
 
 // ===== Models =====
 
@@ -53,7 +60,8 @@ model User {
   phone         String?      @unique
   authProvider  AuthProvider
   status        UserStatus   @default(PENDING)
-  tokenVersion  Int          @default(0) 
+  tokenVersion  Int          @default(0)
+  appLanguage   AppLanguage  @default(EN)  
   
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -109,11 +117,13 @@ model RefreshToken {
 
 // ===== Interpreter Models =====
 
-// 마스터 데이터: 언어
+// 마스터 데이터: 언어 (다국어 지원)
 model Language {
   id          String    @id @default(uuid())
-  code        String    @unique  // "ko", "en", "ja"
-  name        String    @unique  // "한국어", "English"
+  code        String    @unique  // "ko", "en", "uz"
+  nameUz      String   
+  nameRu      String    
+  nameEn      String    
   
   interpreters InterpreterLanguage[]
   @@map("languages")
@@ -131,10 +141,12 @@ model InterpreterLanguage {
   @@map("interpreter_languages")
 }
 
-// 마스터 데이터: 전문분야
+// 마스터 데이터: 전문분야 (다국어 지원)
 model Specialization {
   id          String    @id @default(uuid())
-  name        String    @unique  // "의료", "법률", "기술"
+  nameUz      String    
+  nameRu      String    
+  nameEn      String    
   
   interpreters InterpreterSpecialization[]
   @@map("specializations")
@@ -173,7 +185,6 @@ model Interpreter {
   userId            String    @unique
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-
   name              String?
   bio               String?   @db.Text
   avatarUrl         String?

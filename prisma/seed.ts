@@ -5,22 +5,81 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding...');
 
-  // ===== 언어 마스터 데이터 =====
+  // 언어 데이터 (다국어 지원)
   console.log('Seeding languages...');
-
   const languages = [
-    { code: 'ko', name: '한국어' },
-    { code: 'en', name: 'English' },
-    { code: 'zh', name: '中文' }, // xitoy (필수!)
-    { code: 'vi', name: 'Tiếng Việt' }, // vetnam (필수!)
-    { code: 'th', name: 'ภาษาไทย' }, // tailand (필수!)
-    { code: 'uz', name: 'Oʻzbekcha' },
-    { code: 'id', name: 'Bahasa Indonesia' }, // indonesia
-    { code: 'ru', name: 'Русский' },
-    { code: 'mn', name: 'Монгол' }, // mangol
-    { code: 'km', name: 'ភាសាខ្មែរ' }, // kambodia
-    { code: 'ne', name: 'नेपाली' }, // nepal
-    { code: 'my', name: 'မြန်မာဘာသာ' }, // mianmar
+    {
+      code: 'ko',
+      nameUz: 'Koreys tili',
+      nameRu: 'Корейский',
+      nameEn: 'Korean',
+    },
+    {
+      code: 'en',
+      nameUz: 'Ingliz tili',
+      nameRu: 'Английский',
+      nameEn: 'English',
+    },
+    {
+      code: 'zh',
+      nameUz: 'Xitoy tili',
+      nameRu: 'Китайский',
+      nameEn: 'Chinese',
+    },
+    {
+      code: 'vi',
+      nameUz: 'Vyetnam tili',
+      nameRu: 'Вьетнамский',
+      nameEn: 'Vietnamese',
+    },
+    {
+      code: 'th',
+      nameUz: 'Tay tili',
+      nameRu: 'Тайский',
+      nameEn: 'Thai',
+    },
+    {
+      code: 'uz',
+      nameUz: 'Oʻzbek tili',
+      nameRu: 'Узбекский',
+      nameEn: 'Uzbek',
+    },
+    {
+      code: 'id',
+      nameUz: 'Indoneziya tili',
+      nameRu: 'Индонезийский',
+      nameEn: 'Indonesian',
+    },
+    {
+      code: 'ru',
+      nameUz: 'Rus tili',
+      nameRu: 'Русский',
+      nameEn: 'Russian',
+    },
+    {
+      code: 'mn',
+      nameUz: 'Moʻgʻul tili',
+      nameRu: 'Монгольский',
+      nameEn: 'Mongolian',
+    },
+    {
+      code: 'km',
+      nameUz: 'Kxmer tili',
+      nameRu: 'Кхмерский',
+      nameEn: 'Khmer',
+    },
+    {
+      code: 'ne',
+      nameUz: 'Nepal tili',
+      nameRu: 'Непальский',
+      nameEn: 'Nepali',
+    },
+    {
+      code: 'my',
+      nameUz: 'Birma tili',
+      nameRu: 'Бирманский',
+      nameEn: 'Burmese',
+    },
   ];
 
   for (const lang of languages) {
@@ -30,28 +89,43 @@ async function main() {
       create: lang,
     });
   }
-
   console.log(`${languages.length} languages created`);
 
-  // ===== 전문분야 마스터 데이터 =====
-  console.log('Seeding specializations...');
-
+  // 전문분야 데이터 (다국어 지원)
+  console.log('💼 Seeding specializations...');
   const specializations = [
-    { name: '의료' }, // 병원, 약국, 건강보험
-    { name: '법률' }, // 법률 상담, 소송
-    { name: '출입국/비자' }, // 비자, 체류, 외국인등록
-    { name: '일반/생활' }, // 일상 대화, 쇼핑, 은행 등
-    { name: '고용/노동' },
+    {
+      nameUz: 'Tibbiyot',
+      nameRu: 'Медицина',
+      nameEn: 'Medical',
+    },
+    {
+      nameUz: 'Huquqiy',
+      nameRu: 'Юридическая',
+      nameEn: 'Legal',
+    },
+    {
+      nameUz: 'Viza va immigratsiya',
+      nameRu: 'Виза и иммиграция',
+      nameEn: 'Immigration/Visa',
+    },
+    {
+      nameUz: 'Umumiy/Kundalik',
+      nameRu: 'Общая/Повседневная',
+      nameEn: 'General/Daily',
+    },
+    {
+      nameUz: 'Ish va mehnat',
+      nameRu: 'Трудоустройство',
+      nameEn: 'Employment/Labor',
+    },
   ];
 
   for (const spec of specializations) {
-    await prisma.specialization.upsert({
-      where: { name: spec.name },
-      update: {},
-      create: spec,
+    await prisma.specialization.create({
+      data: spec,
     });
   }
-
   console.log(`${specializations.length} specializations created`);
 
   console.log('Seeding completed!');

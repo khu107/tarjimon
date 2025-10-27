@@ -33,6 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         tokenVersion: true,
         role: true,
         status: true,
+        appLanguage: true,
       },
     });
     if (!user) {
@@ -56,6 +57,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId: user.id,
       role: user.role,
       tokenVersion: user.tokenVersion,
+      appLanguage: user.appLanguage,
     };
   }
 }

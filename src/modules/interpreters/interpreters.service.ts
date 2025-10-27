@@ -152,7 +152,7 @@ export class InterpretersService {
     }
 
     const specialization = await this.prisma.specialization.findUnique({
-      where: { name: addSpecializationDto.specializationName },
+      where: { id: addSpecializationDto.specializationId },
     });
 
     if (!specialization) {
@@ -184,7 +184,7 @@ export class InterpretersService {
     }
 
     const specialization = await this.prisma.specialization.findUnique({
-      where: { name: specializationName },
+      where: { id: specializationName },
     });
 
     if (!specialization) {

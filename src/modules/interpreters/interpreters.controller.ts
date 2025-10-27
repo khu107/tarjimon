@@ -108,18 +108,14 @@ export class InterpretersController {
     );
   }
 
-  @Delete('me/specializations/:specializationName')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.INTERPRETER)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Remove specialization (Interpreter only)' })
+  @Delete('me/specializations/:specializationId')
   async removeSpecialization(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('specializationName') specializationName: string,
+    @Param('specializationId') specializationId: string,
   ) {
     return this.interpretersService.removeSpecialization(
       user.userId,
-      specializationName,
+      specializationId,
     );
   }
 

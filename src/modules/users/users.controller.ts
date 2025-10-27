@@ -5,6 +5,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthenticatedUser } from 'src/common/types/jwt-payload.type';
+import { UpdateUserLanguageDto } from './dto/update-user-language.dto';
 
 @Controller('users')
 export class UsersController {
@@ -27,5 +28,19 @@ export class UsersController {
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.usersService.updateProfile(user.userId, updateProfileDto);
+  }
+
+  @Patch('me/language')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update app language' })
+  async updateLanguage(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() updateUserLanguageDto: UpdateUserLanguageDto,
+  ) {
+    return this.usersService.updateLanguage(
+      user.userId,
+      updateUserLanguageDto.appLanguage,
+    );
   }
 }

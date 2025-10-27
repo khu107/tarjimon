@@ -6,6 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 import { InterpretersModule } from './modules/interpreters/interpreters.module';
 import { validateEnv } from './config/env.validation';
 import { AdminModule } from './modules/admin/admin.module';
+import { LanguagesModule } from './modules/languages/languages.module';
+import { SpecializationsModule } from './modules/specializations/specializations.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { AdminModule } from './modules/admin/admin.module';
     AuthModule,
     InterpretersModule,
     AdminModule,
+    LanguagesModule,
+    SpecializationsModule,
   ],
   providers: [],
 })
