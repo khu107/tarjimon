@@ -43,6 +43,13 @@ lerna-debug.log*
 .env.local
 
 
+# Prisma build files
+prisma/*.js
+prisma/*.d.ts
+prisma/*.js.map
+!prisma/schema.prisma
+
+
 # temp directory
 .temp
 .tmp
