@@ -301,11 +301,10 @@ export class AuthService {
     ]);
 
     // Refresh Token DB에 저장
-    const hashedToken = await bcrypt.hash(refreshToken, 10);
     await this.prisma.refreshToken.create({
       data: {
         userId,
-        token: hashedToken,
+        token: refreshToken,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         deviceInfo,
         ipAddress,
@@ -351,24 +350,16 @@ export class AuthService {
         );
       }
 
-      const storedTokens = await this.prisma.refreshToken.findMany({
+      const storedToken = await this.prisma.refreshToken.findFirst({
         where: {
           userId: payload.sub,
+          token: refreshToken, // 원본 비교
           isRevoked: false,
           expiresAt: { gt: new Date() },
         },
       });
 
-      let isValid = false;
-      for (const storedToken of storedTokens) {
-        const match = await bcrypt.compare(refreshToken, storedToken.token);
-        if (match) {
-          isValid = true;
-          break;
-        }
-      }
-
-      if (!isValid) {
+      if (!storedToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
@@ -410,24 +401,19 @@ export class AuthService {
         }),
       });
 
-      // DB에서 해당 Refresh Token 찾아서 무효화
-      const storedTokens = await this.prisma.refreshToken.findMany({
+      const storedToken = await this.prisma.refreshToken.findFirst({
         where: {
           userId: payload.sub,
+          token: refreshToken,
           isRevoked: false,
         },
       });
 
-      // 저장된 토큰 중 매칭되는 것 찾기
-      for (const storedToken of storedTokens) {
-        const match = await bcrypt.compare(refreshToken, storedToken.token);
-        if (match) {
-          await this.prisma.refreshToken.update({
-            where: { id: storedToken.id },
-            data: { isRevoked: true },
-          });
-          break;
-        }
+      if (storedToken) {
+        await this.prisma.refreshToken.update({
+          where: { id: storedToken.id },
+          data: { isRevoked: true },
+        });
       }
 
       return {
