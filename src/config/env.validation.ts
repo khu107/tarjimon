@@ -38,6 +38,11 @@ const envSchema = z
     ALIGO_SENDER: z
       .string()
       .regex(/^01[0-9]{8,9}$/, '올바른 전화번호 형식이 아닙니다'),
+
+    ALLOWED_ORIGINS: z
+      .string()
+      .default('http://localhost:5173')
+      .transform((str) => str.split(',').map((origin) => origin.trim())),
   })
   .refine(
     (env) => {

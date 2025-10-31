@@ -2,14 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // CORS 설정
-  const allowedOrigins = (
-    process.env.ALLOWED_ORIGINS || 'http://localhost:5173'
-  ).split(',');
+  const allowedOriginsStr =
+    process.env.ALLOWED_ORIGINS || 'http://localhost:5173';
+  const allowedOrigins = allowedOriginsStr
+    .split(',')
+    .map((origin) => origin.trim());
 
   app.enableCors({
     origin: allowedOrigins,
