@@ -6,6 +6,19 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // CORS 설정
+  const allowedOrigins = (
+    process.env.ALLOWED_ORIGINS || 'http://localhost:5173'
+  ).split(',');
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 3600,
+  });
+
   // ValidationPipe 전역 적용
   app.useGlobalPipes(
     new ValidationPipe({
