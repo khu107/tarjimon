@@ -8,6 +8,7 @@ import { VerifySmsDto } from './dto/verify-sms.dto';
 import { Role, SmsVerificationPurpose } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { EnvConfig } from 'src/config/env.validation';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -160,7 +161,7 @@ export class AuthService {
 
     return {
       success: true,
-      user: updatedUser,
+      user: UserResponseDto.fromEntity(updatedUser),
       ...tokens,
     };
   }
